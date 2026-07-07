@@ -11,10 +11,7 @@ class Bridge(BaseHTTPRequestHandler):
         self.handle_request('GET')
 
     def handle_request(self, method):
-        # Path format: /username/password/ENCODED_TARGET_URL
         path = self.path.lstrip('/')
-        
-        # Split ONLY the first two slashes to get user and pass
         parts = path.split('/', 2)
         
         if len(parts) < 3:
@@ -29,7 +26,6 @@ class Bridge(BaseHTTPRequestHandler):
         password = parts[1]
         encoded_target = parts[2]
         
-        # Decode the URL
         target_url = unquote(encoded_target)
 
         if not target_url.startswith('http'):
@@ -40,15 +36,12 @@ class Bridge(BaseHTTPRequestHandler):
             self.wfile.write(msg.encode())
             return
 
-        # Get Body (for POST)
         content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length) if content_length > 0 else None
 
-        # Prepare Auth
         credentials = f"{username}:{password}"
         token = base64.b64encode(credentials.encode()).decode()
 
-        # Forward Request
         req = urllib.request.Request(target_url, data=post_data, method=method)
         req.add_header('Authorization', f'Basic {token}')
         req.add_header('Content-Type', 'application/json')
@@ -71,5 +64,4 @@ class Bridge(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     print("Bridge running on http://localhost:9000")
-    print("Format: http://127.0.0.1:9000/USER/PASS/ENCODED_URL")
     HTTPServer(('127.0.0.1', 9000), Bridge).serve_forever()   
